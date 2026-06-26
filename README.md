@@ -161,16 +161,7 @@ flowchart TD
     F --> A
 ```
 
----
 
-## 5. Code — fully commented, humanized
-
-The code below uses **STM32CubeIDE / STM32 HAL** (the "Arduino library"
-equivalent for STM32 — Hardware Abstraction Layer). I've renamed every
-variable to something self-explanatory instead of the typical terse STM32
-naming, and added a comment on basically every line.
-
-See `switch_led_blink.c` in this same folder. The structure is:
 
 ```
 main()
@@ -188,89 +179,6 @@ main()
  └─ LPTIM1_IRQHandler()     → Blink_Timer_Tick_Callback()
        - toggles the LED pin
 ```
-
-### Key "translate from Arduino" cheat sheet
-
-| Arduino concept | STM32 HAL equivalent used here |
-|---|---|
-| `pinMode(LED, OUTPUT)` | `HAL_GPIO_Init()` with `MODE_OUTPUT_PP` |
-| `pinMode(BTN, INPUT_PULLUP)` | `HAL_GPIO_Init()` with `MODE_IT_FALLING` + `PULLUP` |
-| `attachInterrupt()` | NVIC + `HAL_GPIO_EXTI_Callback()` |
-| `digitalWrite(LED, !state)` | `HAL_GPIO_TogglePin()` |
-| `delay(ms)` | **Not used at all** — replaced by LPTIM interrupts |
-| `millis()` debounce | a saved timestamp compared on each press |
-| Arduino "sleep" libraries | `HAL_PWR_EnterSTOPMode()` (built into HAL, no extra library) |
-
----
-
-## 6. Recommended STM32 simulators (since you've never touched STM32 hardware)
-
-You don't need physical hardware to test the *logic* before the interview.
-Options, roughly best-to-worst for this specific project:
-
-1. **STM32CubeIDE built-in debugger + "Native simulation" / SWV** — Not a
-   full simulator, but lets you single-step the code and watch variables;
-   good enough to prove the state machine logic works. Free, official.
-2. **Renode** (renode.io) — Open-source, simulates real STM32 peripherals
-   (GPIO, EXTI, timers) and can run your compiled `.elf` almost exactly like
-   real silicon, including interrupts. This is the closest thing to "a real
-   Nucleo board in software." Good for proving the whole interrupt-driven
-   design works before you ever touch a board.
-3. **QEMU with STM32 support** (e.g. `qemu-system-arm` + STM32 boards via
-   community forks like `xpack-qemu-arm`) — More setup effort, less
-   peripheral fidelity than Renode for this chip, but works for basic GPIO.
-4. **Proteus (Labcenter)** — Paid, but has STM32 models, lets you literally
-   draw the switch + LED + resistor circuit and simulate it visually. Great
-   if you want to *show a working schematic* in your assignment, not just code.
-5. **Wokwi** — Excellent for Arduino/ESP32 (which you already know), but as
-   of now it does **not** support STM32G0 boards specifically. Skip it for
-   this exact chip; mentioned only so you don't waste time looking for it.
-
-For the actual in-person interview, since they said "showcase on a NUCLEO
-board," treat the simulator as your *rehearsal* tool only — budget time to
-flash and test on the real NUCLEO-G070RB at least once before that meeting,
-since timer-clock-source quirks (LSE not fitted/enabled on some Nucleo
-revisions) only show up on real hardware.
-
-> ⚠️ Hardware note: Some NUCLEO-G070RB boards ship with the LSE crystal
-> **not populated** by default (check solder bridges SB45/SB46 and the
-> X2/X3 crystal footprint in the board's User Manual UM2324). If your LSE
-> doesn't start, the code below falls back to clocking the LPTIM from LSI
-> (~32 kHz internal RC) — slightly less accurate frequency, but it still
-> works in STOP mode and still proves the same power-saving concept. This
-> fallback is included in the code, with a comment explaining the trade-off.
-
----
-
-## 7. Suggested "prompt to visualize this project"
-
-If you want to feed something into an AI image/diagram tool to get a clean
-visual for your slide/report, use this:
-
-> "Create a clean technical block diagram of an STM32 Nucleo development
-> board with a single tactile push-button connected to GPIO pin PC13 with
-> EXTI interrupt, and a single LED connected via a 330-ohm resistor to GPIO
-> pin PA5. Show an arrow from the button through a 'debounce + state
-> machine' box into a 'Low Power Timer (LPTIM)' box, then to the LED. Add a
-> small inset showing the MCU going into 'STOP1 low-power sleep mode'
-> between events. Minimalist engineering schematic style, labeled pins,
-> white background."
-
----
-
-## 8. Quick demo script for the in-person interview
-
-1. Power the board — LED off, nothing blinking (state OFF, MCU asleep).
-2. Press B1 once → LED blinks slowly (0.5 Hz) — let it run a few seconds to
-   visibly show the slow rate.
-3. Press again → faster (1 Hz).
-4. Press again → fastest (2 Hz).
-5. Press again → LED off again, loop proven.
-6. Optional power flex: if they have a multimeter/power profiler, clip it
-   onto the board's current-measurement header and show the µA-level draw
-   while idle (STOP1 mode) vs the mA-level draw when the debugger forces it
-   awake — this is the strongest way to prove the "optimized for power"
-   requirement wasn't just a comment in the code.
 
 ---
 
