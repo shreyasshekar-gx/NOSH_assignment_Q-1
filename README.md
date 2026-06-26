@@ -1,9 +1,5 @@
 # Switch-Controlled LED Blinker — NUCLEO-G070RB
-### (Written for someone coming from Arduino / ESP32 / Raspberry Pi world)
 
-This README is the whole project in one place: what the hardware looks like,
-how the logic works, why we picked certain STM32 tricks for low power, and
-the full code explained line-by-line in plain English.
 
 ---
 
